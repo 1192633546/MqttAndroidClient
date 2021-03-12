@@ -38,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
 
                 MyMqttService.publish("tourist enter counter==" + count++);
             }
-        }, 100);
+        },  100);
 
     }
 
@@ -46,31 +46,28 @@ public class MainActivity extends AppCompatActivity {
      * 申请权限
      */
     public void requestPermission() {
-        PermissionUtils.permission(PermissionConstants.PHONE)
-                .rationale(new PermissionUtils.OnRationaleListener() {
-                    @Override
-                    public void rationale(final ShouldRequest shouldRequest) {
-                        Log.d(TAG, "onDenied: 权限被拒绝后弹框提示");
-                        DialogHelper.showRationaleDialog(shouldRequest, MainActivity.this);
-                    }
-                })
-                .callback(new PermissionUtils.FullCallback() {
-                    @Override
-                    public void onGranted(List<String> permissionsGranted) {
-                        mIntent = new Intent(MainActivity.this, MyMqttService.class);
-                        //开启服务
-                        startService(mIntent);
-                    }
+        PermissionUtils.permission(PermissionConstants.PHONE).rationale(new PermissionUtils.OnRationaleListener() {
+            @Override
+            public void rationale(final ShouldRequest shouldRequest) {
+                Log.d(TAG, "onDenied: 权限被拒绝后弹框提示");
+                DialogHelper.showRationaleDialog(shouldRequest, MainActivity.this);
+            }
+        }).callback(new PermissionUtils.FullCallback() {
+            @Override
+            public void onGranted(List<String> permissionsGranted) {
+                //开启服务
+                mIntent = new Intent(MainActivity.this, MyMqttService.class);
+                startService(mIntent);
+            }
 
-                    @Override
-                    public void onDenied(List<String> permissionsDeniedForever,
-                                         List<String> permissionsDenied) {
-                        Log.d(TAG, "onDenied: 权限被拒绝");
-                        if (!permissionsDeniedForever.isEmpty()) {
-                            DialogHelper.showOpenAppSettingDialog(MainActivity.this);
-                        }
-                    }
-                })
+            @Override
+            public void onDenied(List<String> permissionsDeniedForever, List<String> permissionsDenied) {
+                Log.d(TAG, "onDenied: 权限被拒绝");
+                if (!permissionsDeniedForever.isEmpty()) {
+                    DialogHelper.showOpenAppSettingDialog(MainActivity.this);
+                }
+            }
+        })
                 .request();
     }
 

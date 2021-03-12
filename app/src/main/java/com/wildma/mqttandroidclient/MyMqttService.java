@@ -34,22 +34,51 @@ public class MyMqttService extends Service {
     public static final String TAG = MyMqttService.class.getSimpleName();
     private static MqttAndroidClient mqttAndroidClient;
     private MqttConnectOptions mMqttConnectOptions;
-    public String HOST = "tcp://192.168.0.139:61613";//服务器地址（协议+地址+端口号）
-    public String USERNAME = "admin";//用户名
-    public String PASSWORD = "password";//密码
-    public int ConnectionTimeout = 100; //设置超时时间，单位：秒
-    public int KeepAliveInterval = 100; //设置心跳包发送间隔，单位：秒
+    public String HOST = "tcp://dev.emqx.sanyevi.cn:10220";//服务器地址（协议+地址+端口号）
+    public String USERNAME = "EVICLOUD\\penght";//用户名
+    public String PASSWORD = "witsight_eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJwZW5naHQiLCJjcmVhdGVkIjoxNTk3MTI2NjM0MDAwLCJ1c2VySWQiOiJkMDUyNDVhOS04ZDU4LTQ3YjctYjU3NS1lMzAzNjYwZmEyYTkiLCJhcHBDb2RlIjoiaHVheCIsImF1ZCI6IndlYiJ9.XNfe-KVw_GEDLDsLbPNFKAT6_KXNwP2c4wTqmCd-xNA2vNrEHk6FR0aCN_JAt0bPpG1vYsf-BHXsLaf7Za1eSw-76sasGUopvD5RE8wed2IwCEdEm3BDwS9kQjhChDz3gt9f1_ZiAMXvOdJ3EGbAcCng_m74t796DkFfrbj07IQ";//密码
 
-    public static String PUBLISH_TOPIC = "tourist_enter";//发布主题
-    public static String RESPONSE_TOPIC = "message_arrived";//响应主题
+    public int ConnectionTimeout = 100; //设置超时时间，单位：秒
+    public int KeepAliveInterval = 50; //设置心跳包发送间隔，单位：秒
+
+    public static String PUBLISH_TOPIC = "Device/app/test";//发布主题
+    public static String RESPONSE_TOPIC = "Device/app/test";//响应主题
     @SuppressLint("MissingPermission")
     //客户端ID，一般以客户端唯一标识符表示，这里用设备序列号表示
-    public String CLIENTID = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? Build.getSerial() : Build.SERIAL;
+    public String CLIENTID = "AppTestClient1211";
+
+    /**
+     *
+     Server:tcp:test.emqx.sanyevi.cn:10222
+     clientId:AppTestClient1211
+     username:EVICLOUD\\gongzj
+     password:witsight_eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJnb25nemoiLCJjcmVhdGVkIjoxNjAzODY4NjczMDAwLCJ1c2VySWQiOiI5NGE2MTNiMy04NWIzLTQwNmQtOTQ3MS00NmVjNTZhNGJhOTgiLCJhcHBDb2RlIjoiaHVheCIsImF1ZCI6IndlYiJ9.NFhA-R_sMjynwI4klBOC2kyQ4IKT30kRSuiac4bTrqHDYkin8kR73oen4DNhXFWH4K4l3iB16YVxxPuHSRNptu7wJT5Y_pACPXyF8NOddlRTrxWoFXWX0zlpQz2mljoknxJEI-mp_poAnCHSiK0E-agVG9j8jstZtTsZoi5Fs20
+     */
+
+    /**
+     * 各位好,如果走外网，请使用以下地址
+     * 地址：tcp://dev.emqx.sanyevi.cn:10220
+     * 用户名：EVICLOUD\penght
+     * 密码：witsight_eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJwZW5naHQiLCJjcmVhdGVkIjoxNTk3MTI2NjM0MDAwLCJ1c2VySWQiOiJkMDUyNDVhOS04ZDU4LTQ3YjctYjU3NS1lMzAzNjYwZmEyYTkiLCJhcHBDb2RlIjoiaHVheCIsImF1ZCI6IndlYiJ9.XNfe-KVw_GEDLDsLbPNFKAT6_KXNwP2c4wTqmCd-xNA2vNrEHk6FR0aCN_JAt0bPpG1vYsf-BHXsLaf7Za1eSw-76sasGUopvD5RE8wed2IwCEdEm3BDwS9kQjhChDz3gt9f1_ZiAMXvOdJ3EGbAcCng_m74t796DkFfrbj07IQ
+     * 注意：topic必须是Device/+具体业务。如：Device/app/test
+     */
+
+    /**
+     * 本地服务
+     * public String HOST = "tcp://192.168.0.139:61613";//服务器地址（协议+地址+端口号）
+     * public String USERNAME = "admin";//用户名
+     * public String PASSWORD = "password";//密码
+     */
+
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         init();
+        initInfo();
         return super.onStartCommand(intent, flags, startId);
+    }
+
+    private void initInfo() {
     }
 
     @Nullable
@@ -66,12 +95,12 @@ public class MyMqttService extends Service {
      * @param message 消息
      */
     public static void publish(String message) {
-        sendTime = System.currentTimeMillis();
         Log.e(TAG, "publish: ");
         String topic = PUBLISH_TOPIC;
         Integer qos = 2;
         Boolean retained = false;
         try {
+            sendTime = System.currentTimeMillis();
             //参数分别为：主题、消息的字节数组、服务质量、是否在服务器保留断开连接后的最后一条消息
             mqttAndroidClient.publish(topic, message.getBytes(), qos.intValue(), retained.booleanValue());
         } catch (MqttException e) {
@@ -92,6 +121,7 @@ public class MyMqttService extends Service {
         Boolean retained = false;
         try {
             //参数分别为：主题、消息的字节数组、服务质量、是否在服务器保留断开连接后的最后一条消息
+            sendTime = System.currentTimeMillis();
             mqttAndroidClient.publish(topic, message.getBytes(), qos.intValue(), retained.booleanValue());
         } catch (MqttException e) {
             e.printStackTrace();
@@ -188,7 +218,7 @@ public class MyMqttService extends Service {
         @Override
         public void onFailure(IMqttToken arg0, Throwable arg1) {
             arg1.printStackTrace();
-            Log.i(TAG, "连接失败 ");
+            Log.i(TAG, "连接失败 " + arg1.getMessage());
             doClientConnection();//连接失败，重连（可关闭服务器进行模拟）
         }
     };
@@ -200,7 +230,7 @@ public class MyMqttService extends Service {
         public void messageArrived(String topic, MqttMessage message) throws Exception {
             Log.i(TAG, "收到消息： " + new String(message.getPayload()));
             //收到消息，这里弹出Toast表示。如果需要更新UI，可以使用广播或者EventBus进行发送
-            Toast.makeText(getApplicationContext(), "messageArrived: " + new String(message.getPayload()), Toast.LENGTH_LONG).show();
+//            Toast.makeText(getApplicationContext(), "messageArrived: " + new String(message.getPayload()), Toast.LENGTH_LONG).show();
             //收到其他客户端的消息后，响应给对方告知消息已到达或者消息有问题等
             response("message arrived");
         }
