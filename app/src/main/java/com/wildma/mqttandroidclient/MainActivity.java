@@ -2,7 +2,9 @@ package com.wildma.mqttandroidclient;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
+
+import androidx.appcompat.app.AppCompatActivity;
+
 import android.util.Log;
 import android.view.View;
 
@@ -11,6 +13,8 @@ import com.wildma.mqttandroidclient.permission.PermissionConstants;
 import com.wildma.mqttandroidclient.permission.PermissionUtils;
 
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -24,9 +28,18 @@ public class MainActivity extends AppCompatActivity {
         requestPermission();
     }
 
+    int count = 0;
+
     public void publish(View view) {
         //模拟闸机设备发送消息过来
-        MyMqttService.publish("tourist enter");
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+
+                MyMqttService.publish("tourist enter counter==" + count++);
+            }
+        }, 100);
+
     }
 
     /**

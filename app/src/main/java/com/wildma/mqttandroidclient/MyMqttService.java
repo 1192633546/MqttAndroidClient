@@ -9,9 +9,10 @@ import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
-import android.support.annotation.Nullable;
 import android.util.Log;
 import android.widget.Toast;
+
+import androidx.annotation.Nullable;
 
 import org.eclipse.paho.android.service.MqttAndroidClient;
 import org.eclipse.paho.client.mqttv3.IMqttActionListener;
@@ -30,18 +31,20 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
  */
 
 public class MyMqttService extends Service {
+    public static final String TAG = MyMqttService.class.getSimpleName();
+    private static MqttAndroidClient mqttAndroidClient;
+    private MqttConnectOptions mMqttConnectOptions;
+    public String HOST = "tcp://192.168.0.139:61613";//服务器地址（协议+地址+端口号）
+    public String USERNAME = "admin";//用户名
+    public String PASSWORD = "password";//密码
+    public int ConnectionTimeout = 100; //设置超时时间，单位：秒
+    public int KeepAliveInterval = 100; //设置心跳包发送间隔，单位：秒
 
-    public final   String             TAG            = MyMqttService.class.getSimpleName();
-    private static MqttAndroidClient  mqttAndroidClient;
-    private        MqttConnectOptions mMqttConnectOptions;
-    public         String             HOST           = "tcp://192.168.1.10:61613";//服务器地址（协议+地址+端口号）
-    public         String             USERNAME       = "admin";//用户名
-    public         String             PASSWORD       = "password";//密码
-    public static  String             PUBLISH_TOPIC  = "tourist_enter";//发布主题
-    public static  String             RESPONSE_TOPIC = "message_arrived";//响应主题
+    public static String PUBLISH_TOPIC = "tourist_enter";//发布主题
+    public static String RESPONSE_TOPIC = "message_arrived";//响应主题
     @SuppressLint("MissingPermission")
-    public         String             CLIENTID       = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-            ? Build.getSerial() : Build.SERIAL;//客户端ID，一般以客户端唯一标识符表示，这里用设备序列号表示
+    //客户端ID，一般以客户端唯一标识符表示，这里用设备序列号表示
+    public String CLIENTID = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? Build.getSerial() : Build.SERIAL;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -55,12 +58,16 @@ public class MyMqttService extends Service {
         return null;
     }
 
+    static long sendTime, receiveTime;
+
     /**
      * 发布 （模拟其他客户端发布消息）
      *
      * @param message 消息
      */
     public static void publish(String message) {
+        sendTime = System.currentTimeMillis();
+        Log.e(TAG, "publish: ");
         String topic = PUBLISH_TOPIC;
         Integer qos = 2;
         Boolean retained = false;
@@ -78,6 +85,8 @@ public class MyMqttService extends Service {
      * @param message 消息
      */
     public void response(String message) {
+        receiveTime = System.currentTimeMillis();
+        Log.e(TAG, "response: " + message + ",dt==" + (receiveTime - sendTime));
         String topic = RESPONSE_TOPIC;
         Integer qos = 2;
         Boolean retained = false;
@@ -93,13 +102,14 @@ public class MyMqttService extends Service {
      * 初始化
      */
     private void init() {
+        Log.e(TAG, "init: ");
         String serverURI = HOST; //服务器地址（协议+地址+端口号）
         mqttAndroidClient = new MqttAndroidClient(this, serverURI, CLIENTID);
         mqttAndroidClient.setCallback(mqttCallback); //设置监听订阅消息的回调
         mMqttConnectOptions = new MqttConnectOptions();
         mMqttConnectOptions.setCleanSession(true); //设置是否清除缓存
-        mMqttConnectOptions.setConnectionTimeout(10); //设置超时时间，单位：秒
-        mMqttConnectOptions.setKeepAliveInterval(20); //设置心跳包发送间隔，单位：秒
+        mMqttConnectOptions.setConnectionTimeout(ConnectionTimeout); //设置超时时间，单位：秒
+        mMqttConnectOptions.setKeepAliveInterval(KeepAliveInterval); //设置心跳包发送间隔，单位：秒
         mMqttConnectOptions.setUserName(USERNAME); //设置用户名
         mMqttConnectOptions.setPassword(PASSWORD.toCharArray()); //设置密码
 
@@ -128,11 +138,13 @@ public class MyMqttService extends Service {
      * 连接MQTT服务器
      */
     private void doClientConnection() {
+        Log.e(TAG, "doClientConnection: ");
         if (!mqttAndroidClient.isConnected() && isConnectIsNomarl()) {
             try {
                 mqttAndroidClient.connect(mMqttConnectOptions, null, iMqttActionListener);
             } catch (MqttException e) {
                 e.printStackTrace();
+                Log.e(TAG, "doClientConnection: " + e.getMessage());
             }
         }
     }
@@ -195,6 +207,7 @@ public class MyMqttService extends Service {
 
         @Override
         public void deliveryComplete(IMqttDeliveryToken arg0) {
+            Log.e(TAG, "deliveryComplete: " + arg0);
 
         }
 
