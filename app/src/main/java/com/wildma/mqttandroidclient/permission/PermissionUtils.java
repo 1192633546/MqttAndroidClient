@@ -7,13 +7,14 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.MotionEvent;
+import android.view.WindowManager;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.content.ContextCompat;
-import android.util.Log;
-import android.view.MotionEvent;
-import android.view.WindowManager;
 
 import com.wildma.mqttandroidclient.MyApplication;
 
@@ -35,14 +36,14 @@ public final class PermissionUtils {
     private static PermissionUtils sInstance;
 
     private OnRationaleListener mOnRationaleListener;
-    private SimpleCallback      mSimpleCallback;
-    private FullCallback        mFullCallback;
-    private ThemeCallback       mThemeCallback;
-    private Set<String>         mPermissions;
-    private List<String>        mPermissionsRequest;
-    private List<String>        mPermissionsGranted;
-    private List<String>        mPermissionsDenied;
-    private List<String>        mPermissionsDeniedForever;
+    private SimpleCallback mSimpleCallback;
+    private FullCallback mFullCallback;
+    private ThemeCallback mThemeCallback;
+    private Set<String> mPermissions;
+    private List<String> mPermissionsRequest;
+    private List<String> mPermissionsGranted;
+    private List<String> mPermissionsDenied;
+    private List<String> mPermissionsDeniedForever;
 
     /**
      * 获取应用权限
@@ -50,7 +51,7 @@ public final class PermissionUtils {
      * @return 清单文件中的权限列表
      */
     public static List<String> getPermissions() {
-        return getPermissions(MyApplication.getContext().getPackageName());
+        return getPermissions(getContext().getPackageName());
     }
 
     /**
@@ -60,7 +61,7 @@ public final class PermissionUtils {
      * @return 清单文件中的权限列表
      */
     public static List<String> getPermissions(final String packageName) {
-        PackageManager pm = MyApplication.getContext().getPackageManager();
+        PackageManager pm = getContext().getPackageManager();
         try {
             return Arrays.asList(
                     pm.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS)
@@ -90,7 +91,7 @@ public final class PermissionUtils {
     private static boolean isGranted(final String permission) {
         return Build.VERSION.SDK_INT < Build.VERSION_CODES.M
                 || PackageManager.PERMISSION_GRANTED
-                == ContextCompat.checkSelfPermission(MyApplication.getContext(), permission);
+                == ContextCompat.checkSelfPermission(getContext(), permission);
     }
 
     /**
@@ -98,8 +99,8 @@ public final class PermissionUtils {
      */
     public static void launchAppDetailsSettings() {
         Intent intent = new Intent("android.settings.APPLICATION_DETAILS_SETTINGS");
-        intent.setData(Uri.parse("package:" + MyApplication.getContext().getPackageName()));
-        MyApplication.getContext().startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        intent.setData(Uri.parse("package:" + getContext().getPackageName()));
+        getContext().startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
     }
 
     /**
@@ -197,7 +198,7 @@ public final class PermissionUtils {
     private void startPermissionActivity() {
         mPermissionsDenied = new ArrayList<>();
         mPermissionsDeniedForever = new ArrayList<>();
-        PermissionActivity.start(MyApplication.getContext());
+        PermissionActivity.start(getContext());
     }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -358,5 +359,10 @@ public final class PermissionUtils {
     /*主题回调接口*/
     public interface ThemeCallback {
         void onActivityCreate(Activity activity);
+    }
+
+    private static Context getContext() {
+        Context context = MyApplication.getContext();
+        return context;
     }
 }

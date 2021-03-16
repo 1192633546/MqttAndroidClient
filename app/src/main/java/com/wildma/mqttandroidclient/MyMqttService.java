@@ -6,11 +6,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 
@@ -39,7 +37,7 @@ public class MyMqttService extends Service {
     public String PASSWORD = "witsight_eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJwZW5naHQiLCJjcmVhdGVkIjoxNTk3MTI2NjM0MDAwLCJ1c2VySWQiOiJkMDUyNDVhOS04ZDU4LTQ3YjctYjU3NS1lMzAzNjYwZmEyYTkiLCJhcHBDb2RlIjoiaHVheCIsImF1ZCI6IndlYiJ9.XNfe-KVw_GEDLDsLbPNFKAT6_KXNwP2c4wTqmCd-xNA2vNrEHk6FR0aCN_JAt0bPpG1vYsf-BHXsLaf7Za1eSw-76sasGUopvD5RE8wed2IwCEdEm3BDwS9kQjhChDz3gt9f1_ZiAMXvOdJ3EGbAcCng_m74t796DkFfrbj07IQ";//密码
 
     public int ConnectionTimeout = 100; //设置超时时间，单位：秒
-    public int KeepAliveInterval = 50; //设置心跳包发送间隔，单位：秒
+    public int KeepAliveInterval = 10; //设置心跳包发送间隔，单位：秒
 
     public static String PUBLISH_TOPIC = "Device/app/test";//发布主题
     public static String RESPONSE_TOPIC = "Device/app/test";//响应主题
@@ -73,13 +71,11 @@ public class MyMqttService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.e(TAG, "onStartCommand: ");
         init();
-        initInfo();
         return super.onStartCommand(intent, flags, startId);
     }
 
-    private void initInfo() {
-    }
 
     @Nullable
     @Override
@@ -87,7 +83,7 @@ public class MyMqttService extends Service {
         return null;
     }
 
-    static long sendTime, receiveTime;
+    private static long sendTime, receiveTime;
 
     /**
      * 发布 （模拟其他客户端发布消息）
@@ -95,7 +91,7 @@ public class MyMqttService extends Service {
      * @param message 消息
      */
     public static void publish(String message) {
-        Log.e(TAG, "publish: ");
+        Log.e(TAG, "publish: message==" + message);
         String topic = PUBLISH_TOPIC;
         Integer qos = 2;
         Boolean retained = false;
@@ -105,6 +101,7 @@ public class MyMqttService extends Service {
             mqttAndroidClient.publish(topic, message.getBytes(), qos.intValue(), retained.booleanValue());
         } catch (MqttException e) {
             e.printStackTrace();
+            Log.e(TAG, "publish: " + e.getMessage());
         }
     }
 
@@ -115,13 +112,14 @@ public class MyMqttService extends Service {
      */
     public void response(String message) {
         receiveTime = System.currentTimeMillis();
-        Log.e(TAG, "response: " + message + ",dt==" + (receiveTime - sendTime));
+        Log.e(TAG, "response: 收到消息:" + message + ",dt==" + (receiveTime - sendTime));
         String topic = RESPONSE_TOPIC;
         Integer qos = 2;
         Boolean retained = false;
         try {
             //参数分别为：主题、消息的字节数组、服务质量、是否在服务器保留断开连接后的最后一条消息
             sendTime = System.currentTimeMillis();
+            Log.e(TAG, "response: 发送消息");
             mqttAndroidClient.publish(topic, message.getBytes(), qos.intValue(), retained.booleanValue());
         } catch (MqttException e) {
             e.printStackTrace();
@@ -207,11 +205,12 @@ public class MyMqttService extends Service {
 
         @Override
         public void onSuccess(IMqttToken arg0) {
-            Log.i(TAG, "连接成功 ");
+            Log.i(TAG, "连接成功 :" + arg0.toString());
             try {
                 mqttAndroidClient.subscribe(PUBLISH_TOPIC, 2);//订阅主题，参数：主题、服务质量
             } catch (MqttException e) {
                 e.printStackTrace();
+                Log.e(TAG, "onSuccess: ");
             }
         }
 
@@ -228,7 +227,7 @@ public class MyMqttService extends Service {
 
         @Override
         public void messageArrived(String topic, MqttMessage message) throws Exception {
-            Log.i(TAG, "收到消息： " + new String(message.getPayload()));
+            Log.i(TAG, "收到消息：messageArrived :topic==" + topic + "," + new String(message.getPayload()));
             //收到消息，这里弹出Toast表示。如果需要更新UI，可以使用广播或者EventBus进行发送
 //            Toast.makeText(getApplicationContext(), "messageArrived: " + new String(message.getPayload()), Toast.LENGTH_LONG).show();
             //收到其他客户端的消息后，响应给对方告知消息已到达或者消息有问题等
@@ -243,13 +242,14 @@ public class MyMqttService extends Service {
 
         @Override
         public void connectionLost(Throwable arg0) {
-            Log.i(TAG, "连接断开 ");
+            Log.i(TAG, "连接断开 "+arg0.getMessage());
             doClientConnection();//连接断开，重连
         }
     };
 
     @Override
     public void onDestroy() {
+        Log.e(TAG, "onDestroy: " );
         try {
             mqttAndroidClient.disconnect(); //断开连接
         } catch (MqttException e) {

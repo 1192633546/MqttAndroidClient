@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class MainActivity extends AppCompatActivity {
+public class MqttMainActivity extends AppCompatActivity {
 
     private String TAG = this.getClass().getSimpleName();
     private Intent mIntent;
@@ -50,13 +50,13 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void rationale(final ShouldRequest shouldRequest) {
                 Log.d(TAG, "onDenied: 权限被拒绝后弹框提示");
-                DialogHelper.showRationaleDialog(shouldRequest, MainActivity.this);
+                DialogHelper.showRationaleDialog(shouldRequest, MqttMainActivity.this);
             }
         }).callback(new PermissionUtils.FullCallback() {
             @Override
             public void onGranted(List<String> permissionsGranted) {
                 //开启服务
-                mIntent = new Intent(MainActivity.this, MyMqttService.class);
+                mIntent = new Intent(MqttMainActivity.this, MyMqttService.class);
                 startService(mIntent);
             }
 
@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
             public void onDenied(List<String> permissionsDeniedForever, List<String> permissionsDenied) {
                 Log.d(TAG, "onDenied: 权限被拒绝");
                 if (!permissionsDeniedForever.isEmpty()) {
-                    DialogHelper.showOpenAppSettingDialog(MainActivity.this);
+                    DialogHelper.showOpenAppSettingDialog(MqttMainActivity.this);
                 }
             }
         })
